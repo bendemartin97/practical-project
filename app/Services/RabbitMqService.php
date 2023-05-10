@@ -84,6 +84,7 @@ class RabbitMqService implements ConnectionInterface
             false,                  #no wait - TRUE: the server will not respond to the method. The client should not wait for a reply method
             function (AMQPMessage $msg) {
                 $this->message = $msg->body;
+                $msg->ack();
                 $this->channel->basic_cancel('receive');
             }
         );
