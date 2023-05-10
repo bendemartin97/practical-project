@@ -35,12 +35,12 @@ export default {
     name: "Result",
     props: {
         requestTime: {
-            type: String,
-            default: '0.0'
+            type: Number,
+            default: 0
         },
         executionTime: {
             type: String,
-            default: '0.0'
+            default: ''
         },
         periodRangeCounter: {
             type: Number,
@@ -58,7 +58,12 @@ export default {
             type: Number,
             default: 0
         },
-    }
+    },
+    computed: {
+        executionTimeColor() {
+            return parseFloat(this.executionTime) > 1000 ? 'red' : 'green'
+        }
+    },
 }
 </script>
 
