@@ -8,14 +8,26 @@
                 </div>
                 <div class="d-flex  justify-content-between align-content-between my-3">
                     <h3 class="text-2xl font-bold text-gray-900">Resources: {{ rc }}</h3>
-                    <PrimaryButton :width="'w-25'" :type="'button'" @click="seedResources">
+                    <PrimaryButton
+                        :width="'w-25'"
+                        :type="'button'"
+                        :style="{opacity: disabled ? 0.5 : 1}"
+                        @click="seedResources"
+                        :disabled="disabled"
+                    >
                         Create 10 Resources
                     </PrimaryButton>
                 </div>
 
                 <div class="d-flex justify-content-between align-content-between my-3">
                     <h3 class="text-2xl font-bold text-gray-900">Bookings: {{ bc }}</h3>
-                    <PrimaryButton :width="'w-25'" :type="'button'" @click="seedBookings">
+                    <PrimaryButton
+                        :width="'w-25'"
+                        :type="'button'"
+                        :style="{opacity: disabled ? 0.5 : 1}"
+                        @click="seedBookings"
+                        :disabled="disabled"
+                    >
                         Create Bookings
                     </PrimaryButton>
                 </div>
@@ -25,18 +37,44 @@
 
                 <Chart ref="chartComponent"/>
 
+                <div class="d-flex flex-column justify-content-center mb-5">
+                    <h1 class="ps-2 text-2xl font-bold text-gray-900">Test all connections in row</h1>
+                    <ConnectionPanel
+                        @call-done="requestChartData"
+                    >
+                        <template #header>
+                            <span class="ps-4 font-bold text-gray-900"> Run the simulation </span>
+                        </template>
+                        <template #content>
+                            <div class="alert alert-warning d-flex align-items-center">
+                                <span
+                                    class="d-flex align-items-center justify-content-center border-rounded text-center col-1">
+                                    <font-awesome-icon style="color: gray" :icon="['fas', 'info']"/>
+                                </span>
+                                <span class="ps-3 text-justify text-wrap">
+                                    All methods are executed one after the other with different number of resources and bookings. The current database will be deleted. This process can take a few minutes. Then the results are displayed on the chart
+                                </span>
+                            </div>
+                        </template>
+                        <template #footer="{ setLoading, isLoading }">
+                            <button class="btn btn-outline-primary btn-sm" :class="{disabled: isLoading}"
+                                    @click="simulate(setLoading)">
+                                Run
+                            </button>
+                        </template>
+                    </ConnectionPanel>
+                </div>
+
+
                 <div class="d-flex flex-column justify-content-center">
                     <h1 class="ps-2 text-2xl font-bold text-gray-900">Test the different connections</h1>
                     <div v-for="connection in connections">
                         <ConnectionPanel :connection="connection" @call-done="requestChartData"/>
                     </div>
                 </div>
-                <div v-if="result">
-                    {{ result }}
-                </div>
             </div>
         </div>
-        <span class="text-center">
+        <span class="text-center mt-3">
                     Powered by
             <a href="https://anny.co" target="_blank" style="text-decoration:none">anny GmbH</a>
         </span>
@@ -51,10 +89,11 @@ import {get} from 'lodash'
 import {Head} from "@inertiajs/vue3";
 import axios from "axios";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
-import { connections } from "@/utils/connectionHelper";
+import {connections} from "@/utils/connectionHelper";
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 import ConnectionPanel from "@/Components/ConnectionPanel.vue";
 import Chart from "@/Components/Chart.vue";
+import { ROUTES } from "@/utils/connectionHelper";
 
 export default {
     name: "Main",
@@ -78,6 +117,11 @@ export default {
         PrimaryButton,
         Chart
     },
+    computed: {
+        disabled() {
+            return this.rc > 100 || this.bc > 1000
+        }
+    },
     methods: {
         async seedResources() {
             let response = await axios.post(
@@ -99,11 +143,31 @@ export default {
             this.rc = 0
             this.bc = 0
 
-            await this.$refs.chartComponent.requestChartData()
+            await this.requestChartData
         },
         async requestChartData() {
             await this.$refs.chartComponent.requestChartData()
         },
+        async simulate(callback) {
+            callback()
+            try {
+                await this.flushDatabase()
+                for(let i = 0; i < 10; i++) {
+                    await this.seedResources()
+                    await this.seedBookings()
+
+                    for (const route of ROUTES) {
+                        await axios.post("api/" + route)
+                    }
+                }
+
+                await this.requestChartData()
+            } catch (e) {
+                console.log(e)
+            } finally {
+                callback()
+            }
+        }
     },
 }
 </script>
@@ -123,7 +187,9 @@ export default {
     min-height: 100vh;
 }
 
-html { overflow-y: scroll; }
+html {
+    overflow-y: scroll;
+}
 </style>
 
 

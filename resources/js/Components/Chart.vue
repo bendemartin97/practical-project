@@ -39,8 +39,8 @@ export default {
                         }
                     },
                     min: 0,
-                    max: 100,
-                    tickAmount: 10,
+                    max: 0,
+                    tickAmount: 20,
 
                 },
             },
@@ -77,11 +77,6 @@ export default {
 
         const results = get(response, 'data')
 
-        if(!results.length) {
-            this.emptyResult = true
-            return
-        }
-
         TYPES.forEach(type => {
             const data = this.createDataByType(results[type])
             this.series.push({
@@ -89,9 +84,17 @@ export default {
                 data: data
             })
         })
+
         this.$refs.chart.updateOptions({
             yaxis: {
-                max: this.max
+                labels: {
+                    formatter: function (value) {
+                        return value.toFixed(2) + ' ms';
+                    }
+                },
+                min: 0,
+                max: this.max,
+                tickAmount: 20,
             }
         })
     }

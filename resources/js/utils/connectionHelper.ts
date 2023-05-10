@@ -52,7 +52,7 @@ export type Connection = {
     route: string,
 }
 
-const TYPES = [
+export const ROUTES = [
     'rpc',
     'php',
     'websocket',

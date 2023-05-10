@@ -2,7 +2,9 @@
     <div class="connection-panel py-3">
         <!-- Header -->
             <button class="d-flex justify-content-between pe-4 w-100" @click="isOpen = !isOpen">
-                <span class="ps-4 font-bold text-gray-900"> {{ connection.name }} </span>
+                <slot name="header">
+                    <span class="ps-4 font-bold text-gray-900"> {{ connection.name }} </span>
+                </slot>
                 <font-awesome-icon v-if="!isOpen" icon="fa-solid fa-angle-down"/>
                 <font-awesome-icon v-else icon="fa-solid fa-angle-up"/>
             </button>
@@ -15,48 +17,52 @@
                 <font-awesome-icon :icon="['fas', 'spinner']" class="spin text-2xl"/>
             </div>
             <div v-else>
-                <!-- Sequence diagram -->
-                <div class="d-flex justify-content-center mb-3">
-                    <img :src="'img/' + connection.img" style="height: 80%;"  alt="rabbitmq"/>
-                </div>
+                <slot name="content">
+                    <!-- Sequence diagram -->
+                    <div class="d-flex justify-content-center mb-3">
+                        <img :src="'img/' + connection.img" style="height: 80%;"  alt="rabbitmq"/>
+                    </div>
 
-                <!-- Connection info -->
-                <div class="alert alert-warning d-flex align-items-center" >
+                    <!-- Connection info -->
+                    <div class="alert alert-warning d-flex align-items-center" >
                     <span class="d-flex align-items-center justify-content-center border-rounded text-center col-1">
                         <font-awesome-icon style="color: gray" :icon="['fas', 'info']"/>
                     </span>
-                    <span class="ps-3 text-justify text-wrap"> {{ connection.info }}</span>
-                </div>
+                        <span class="ps-3 text-justify text-wrap"> {{ connection.info }}</span>
+                    </div>
 
-                <!-- Result -->
-                <div v-if="result" class="d-flex align-items-center justify-content-center">
-                    <Result
-                        :execution-time="executionTime"
-                        :request-time="requestTime"
-                        :period-range-counter="periodRangeCounter"
-                        :resource-range-counter="resourceRangeCounter"
-                        :total-range-counter="totalRangeCounter"
-                        :unavailable-total-days-counter="unavailableTotalDaysCounter"
-                    />
-                </div>
+                    <!-- Result -->
+                    <div v-if="result" class="d-flex align-items-center justify-content-center">
+                        <Result
+                            :execution-time="executionTime"
+                            :request-time="requestTime"
+                            :period-range-counter="periodRangeCounter"
+                            :resource-range-counter="resourceRangeCounter"
+                            :total-range-counter="totalRangeCounter"
+                            :unavailable-total-days-counter="unavailableTotalDaysCounter"
+                        />
+                    </div>
 
-                <!-- Error -->
-                <div v-if="error" class="alert alert-danger">
-                    <div class="d-flex align-items-center">
+                    <!-- Error -->
+                    <div v-if="error" class="alert alert-danger">
+                        <div class="d-flex align-items-center">
                         <span class="d-flex align-items-center justify-content-center border-rounded text-center col-1">
                            X
                         </span>
-                        <span class="ps-3 text-justify"> {{ error }}</span>
+                            <span class="ps-3 text-justify"> {{ error }}</span>
+                        </div>
                     </div>
-                </div>
+                </slot>
             </div>
 
             <!-- Run button -->
             <div class="d-flex justify-content-end">
-                <button class="btn btn-outline-primary btn-sm" :class="{disabled: isLoading}"
-                        @click="call(connection.route)">
-                    Run
-                </button>
+                <slot name="footer" :setLoading="setLoading" :isLoading="isLoading">
+                    <button class="btn btn-outline-primary btn-sm" :class="{disabled: isLoading}"
+                            @click="call()">
+                        Run
+                    </button>
+                </slot>
             </div>
         </div>
     </div>
@@ -71,7 +77,7 @@ export default {
     props: {
         connection: {
             type: Object,
-            required: true,
+            default: null,
         }
     },
     components: {
@@ -91,11 +97,6 @@ export default {
             unavailableTotalDaysCounter: 0,
 
             error: null,
-        }
-    },
-    computed: {
-        executionTimeColor() {
-            return parseFloat(this.executionTime) > 1000 ? 'red' : 'green'
         }
     },
     methods: {
@@ -124,12 +125,15 @@ export default {
             this.resourceRangeCounter = this.result['resourceRangeCounter']
             this.totalRangeCounter = this.result['totalRangeCounter']
             this.unavailableTotalDaysCounter = this.result['unavailableTotalDaysCounter']
+        },
+        setLoading() {
+            this.isLoading = !this.isLoading
         }
     }
 }
 </script>
 
-<style scoped>
+<style>
 .connection-panel {
     border-radius: 0.5rem;
     border: solid rgba(12, 33, 78, 0.45);
